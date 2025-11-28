@@ -85,7 +85,6 @@ pod install
 xcodebuild -workspace *.xcworkspace \
   -scheme $SCHEME \
   -configuration Release \
-  -destination generic/platform=iOS \
   -archivePath build/App.xcarchive \
   -allowProvisioningUpdates \
   DEVELOPMENT_TEAM=$TEAM_ID \
@@ -98,7 +97,7 @@ cat > exportOptions.plist << EOF
 <plist version="1.0">
 <dict>
     <key>method</key>
-    <string>app-store</string>
+    <string>app-store-connect</string>
     <key>teamID</key>
     <string>$TEAM_ID</string>
     <key>signingStyle</key>
