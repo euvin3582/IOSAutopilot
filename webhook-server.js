@@ -19,6 +19,7 @@ app.post('/webhook', async (req, res) => {
     res.status(200).send('Build triggered');
     
     try {
+      require('dotenv').config();
       execSync('./build-ios.sh', { 
         cwd: __dirname, 
         stdio: 'inherit',

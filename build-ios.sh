@@ -68,8 +68,9 @@ echo "🔢 Incrementing build number..."
 cd ios
 CURRENT_BUILD=$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" $SCHEME/Info.plist)
 NEW_BUILD=$((CURRENT_BUILD + 1))
-if [ $NEW_BUILD -lt $MIN_BUILD_NUMBER ]; then
-  NEW_BUILD=$MIN_BUILD_NUMBER
+echo "Current: $CURRENT_BUILD, Incremented: $NEW_BUILD, Min: $MIN_BUILD_NUMBER"
+if [ $NEW_BUILD -le $MIN_BUILD_NUMBER ]; then
+  NEW_BUILD=$((MIN_BUILD_NUMBER + 1))
 fi
 /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $NEW_BUILD" $SCHEME/Info.plist
 echo "Build number: $NEW_BUILD"
