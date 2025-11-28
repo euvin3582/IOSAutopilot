@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const { execSync } = require('child_process');
 const path = require('path');
@@ -19,11 +20,10 @@ app.post('/webhook', async (req, res) => {
     res.status(200).send('Build triggered');
     
     try {
-      require('dotenv').config();
       execSync('./build-ios.sh', { 
         cwd: __dirname, 
         stdio: 'inherit',
-        env: process.env
+        env: { ...process.env }
       });
     } catch (error) {
       console.error('❌ Build failed:', error.message);
