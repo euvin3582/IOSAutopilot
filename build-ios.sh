@@ -23,13 +23,14 @@ fi
 cd "$REPO_DIR"
 
 echo "📝 Creating .env file..."
-cat > .env << EOF
-${APP_ENV_VARS}
-EOF
+echo "$APP_ENV_VARS" > .env
 
 echo "📦 Installing dependencies..."
 rm -rf node_modules
 npm install
+
+echo "📝 Verifying .env file..."
+cat .env
 
 echo "🔧 Patching ReactNativeDependencies podspec..."
 PODSPEC="node_modules/react-native/third-party-podspecs/ReactNativeDependencies.podspec"
