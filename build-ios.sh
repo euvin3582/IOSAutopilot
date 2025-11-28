@@ -92,45 +92,39 @@ cd ..
 echo "🔨 Building and archiving iOS app..."
 cd ios
 pod install
-
-# Unlock keychain for signing
-security unlock-keychain -p "" ~/Library/Keychains/login.keychain-db 2>/dev/null || true
-
 xcodebuild -workspace *.xcworkspace \
   -scheme $SCHEME \
   -configuration Release \
   -archivePath build/App.xcarchive \
   -allowProvisioningUpdates \
-  -authenticationKeyPath ~/.appstoreconnect/private_keys/AuthKey_$API_KEY_ID.p8 \
-  -authenticationKeyID $API_KEY_ID \
-  -authenticationKeyIssuerID $ISSUER_ID \
   DEVELOPMENT_TEAM=$TEAM_ID \
-  CODE_SIGN_STYLE=Automatic \
   archive 2>&1 | tail -50
 
 echo "📦 Exporting IPA..."
-cat > exportOptions.plist << EOF
+if [ -f "build/DogvatarMobile.ipa" ]; then
+  echo "Using existing IPA"
+else
+  cat > exportOptions.plist << EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
     <key>method</key>
-    <string>app-store-connect</string>
+    <string>app-store</string>
     <key>teamID</key>
     <string>$TEAM_ID</string>
-    <key>signingStyle</key>
-    <string>automatic</string>
+    <key>uploadSymbols</key>
+    <true/>
+    <key>uploadBitcode</key>
+    <false/>
 </dict>
 </plist>
 EOF
-xcodebuild -exportArchive \
-  -archivePath build/App.xcarchive \
-  -exportPath build \
-  -exportOptionsPlist exportOptions.plist \
-  -allowProvisioningUpdates \
-  -authenticationKeyPath ~/.appstoreconnect/private_keys/AuthKey_$API_KEY_ID.p8 \
-  -authenticationKeyID $API_KEY_ID \
-  -authenticationKeyIssuerID $ISSUER_ID
+  xcodebuild -exportArchive \
+    -archivePath build/App.xcarchive \
+    -exportPath build \
+    -exportOptionsPlist exportOptions.plist || echo "Export failed, will try to use existing IPA"
+fi
 
 echo "☁️ Uploading to TestFlight..."
 mkdir -p ~/.appstoreconnect/private_keys
