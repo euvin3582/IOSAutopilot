@@ -6,7 +6,7 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-const REPO_PATH = path.join(__dirname, 'dogvatarmobile');
+const TARGET_REPO = process.env.TARGET_REPO || 'YOUR_ORG/YOUR_REPO';
 
 app.post('/webhook', async (req, res) => {
   console.log('📥 Headers:', req.headers);
@@ -14,7 +14,7 @@ app.post('/webhook', async (req, res) => {
   
   const { repository, ref } = req.body;
   
-  if (repository?.full_name === 'YOUR_ORG/YOUR_REPO' && ref?.startsWith('refs/heads/')) {
+  if (repository?.full_name === TARGET_REPO && ref?.startsWith('refs/heads/')) {
     console.log('🚀 Push detected, triggering build...');
     res.status(200).send('Build triggered');
     

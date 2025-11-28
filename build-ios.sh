@@ -1,8 +1,13 @@
 #!/bin/bash
 set -e
 
-REPO_URL="https://github.com/YOUR_ORG/YOUR_REPO.git"
-REPO_DIR="YOUR_REPO"
+REPO_URL="${REPO_URL}"
+REPO_DIR="${REPO_DIR}"
+SCHEME="${SCHEME}"
+TEAM_ID="${APPLE_TEAM_ID}"
+API_KEY_ID="${API_KEY_ID}"
+ISSUER_ID="${APP_STORE_CONNECT_ISSUER_ID}"
+MIN_BUILD_NUMBER="${MIN_BUILD_NUMBER:-1}"
 
 echo "📦 Cloning/updating repository..."
 if [ -d "$REPO_DIR" ]; then
@@ -55,12 +60,12 @@ EXPO_NO_GIT_STATUS=1 npx expo prebuild --platform ios
 
 echo "🔢 Incrementing build number..."
 cd ios
-CURRENT_BUILD=$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" YOUR_APP_SCHEME/Info.plist)
+CURRENT_BUILD=$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" $SCHEME/Info.plist)
 NEW_BUILD=$((CURRENT_BUILD + 1))
-if [ $NEW_BUILD -lt 1 ]; then
-  NEW_BUILD=1
+if [ $NEW_BUILD -lt $MIN_BUILD_NUMBER ]; then
+  NEW_BUILD=$MIN_BUILD_NUMBER
 fi
-/usr/libexec/PlistBuddy -c "Set :CFBundleVersion $NEW_BUILD" YOUR_APP_SCHEME/Info.plist
+/usr/libexec/PlistBuddy -c "Set :CFBundleVersion $NEW_BUILD" $SCHEME/Info.plist
 echo "Build number: $NEW_BUILD"
 cd ..
 
@@ -73,12 +78,12 @@ echo "🔨 Building and archiving iOS app..."
 cd ios
 pod install
 xcodebuild -workspace *.xcworkspace \
-  -scheme YOUR_APP_SCHEME \
+  -scheme $SCHEME \
   -configuration Release \
   -destination generic/platform=iOS \
   -archivePath build/App.xcarchive \
   -allowProvisioningUpdates \
-  DEVELOPMENT_TEAM=YOUR_TEAM_ID \
+  DEVELOPMENT_TEAM=$TEAM_ID \
   archive 2>&1 | tail -50
 
 echo "📦 Exporting IPA..."
@@ -90,7 +95,7 @@ cat > exportOptions.plist << EOF
     <key>method</key>
     <string>app-store</string>
     <key>teamID</key>
-    <string>YOUR_TEAM_ID</string>
+    <string>$TEAM_ID</string>
     <key>signingStyle</key>
     <string>automatic</string>
 </dict>
@@ -104,11 +109,11 @@ xcodebuild -exportArchive \
 
 echo "☁️ Uploading to TestFlight..."
 mkdir -p ~/.appstoreconnect/private_keys
-cp ../../AuthKey_YOUR_KEY_ID.p8 ~/.appstoreconnect/private_keys/
+cp ../../AuthKey_$API_KEY_ID.p8 ~/.appstoreconnect/private_keys/
 xcrun altool --upload-app \
   --type ios \
   --file build/*.ipa \
-  --apiKey YOUR_API_KEY_ID \
-  --apiIssuer YOUR_ISSUER_ID
+  --apiKey $API_KEY_ID \
+  --apiIssuer $ISSUER_ID
 cd ..
 echo "✅ Build and upload complete!"
