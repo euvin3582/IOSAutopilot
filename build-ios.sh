@@ -22,6 +22,11 @@ fi
 
 cd "$REPO_DIR"
 
+echo "📝 Creating .env file..."
+cat > .env << EOF
+${APP_ENV_VARS}
+EOF
+
 echo "📦 Installing dependencies..."
 rm -rf node_modules
 npm install
