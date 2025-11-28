@@ -92,12 +92,20 @@ cd ..
 echo "🔨 Building and archiving iOS app..."
 cd ios
 pod install
+
+# Unlock keychain for signing
+security unlock-keychain -p "" ~/Library/Keychains/login.keychain-db 2>/dev/null || true
+
 xcodebuild -workspace *.xcworkspace \
   -scheme $SCHEME \
   -configuration Release \
   -archivePath build/App.xcarchive \
   -allowProvisioningUpdates \
+  -authenticationKeyPath ~/.appstoreconnect/private_keys/AuthKey_$API_KEY_ID.p8 \
+  -authenticationKeyID $API_KEY_ID \
+  -authenticationKeyIssuerID $ISSUER_ID \
   DEVELOPMENT_TEAM=$TEAM_ID \
+  CODE_SIGN_STYLE=Automatic \
   archive 2>&1 | tail -50
 
 echo "📦 Exporting IPA..."
@@ -119,7 +127,10 @@ xcodebuild -exportArchive \
   -archivePath build/App.xcarchive \
   -exportPath build \
   -exportOptionsPlist exportOptions.plist \
-  -allowProvisioningUpdates
+  -allowProvisioningUpdates \
+  -authenticationKeyPath ~/.appstoreconnect/private_keys/AuthKey_$API_KEY_ID.p8 \
+  -authenticationKeyID $API_KEY_ID \
+  -authenticationKeyIssuerID $ISSUER_ID
 
 echo "☁️ Uploading to TestFlight..."
 mkdir -p ~/.appstoreconnect/private_keys
