@@ -1,0 +1,6 @@
+node_modules/
+.env
+*.p8
+dogvatarmobile/
+*.log
+.DS_Store

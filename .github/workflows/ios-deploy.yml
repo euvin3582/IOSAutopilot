@@ -1,0 +1,48 @@
+name: iOS Build and Deploy
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout external repo
+      uses: actions/checkout@v4
+      with:
+        repository: dogvatar-dog/dogvatarmobile
+        token: ${{ secrets.EXTERNAL_REPO_TOKEN }}
+    
+    - name: Setup Xcode
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: latest-stable
+    
+    - name: Build iOS App
+      run: |
+        xcodebuild -workspace YourApp.xcworkspace \
+          -scheme YourApp \
+          -configuration Release \
+          -destination generic/platform=iOS \
+          -archivePath YourApp.xcarchive \
+          archive
+    
+    - name: Export IPA
+      run: |
+        xcodebuild -exportArchive \
+          -archivePath YourApp.xcarchive \
+          -exportPath . \
+          -exportOptionsPlist ExportOptions.plist
+    
+    - name: Upload to App Store Connect
+      env:
+        APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+        APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+        APP_STORE_CONNECT_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+      run: |
+        xcrun altool --upload-app \
+          --type ios \
+          --file YourApp.ipa \
+          --apiKey $APP_STORE_CONNECT_API_KEY_ID \
+          --apiIssuer $APP_STORE_CONNECT_ISSUER_ID
