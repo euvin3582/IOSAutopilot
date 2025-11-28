@@ -1,6 +1,13 @@
 #!/bin/bash
 set -e
 
+# Load environment variables from parent directory
+if [ -f "../.env" ]; then
+  set -a
+  source ../.env
+  set +a
+fi
+
 REPO_URL="${REPO_URL}"
 REPO_DIR="${REPO_DIR}"
 SCHEME="${SCHEME}"
@@ -23,6 +30,7 @@ fi
 cd "$REPO_DIR"
 
 echo "📝 Creating .env file..."
+echo "APP_ENV_VARS length: ${#APP_ENV_VARS}"
 echo "$APP_ENV_VARS" > .env
 
 echo "📦 Installing dependencies..."
