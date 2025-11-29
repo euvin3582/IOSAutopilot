@@ -1,10 +1,13 @@
 #!/bin/bash
 set -e
 
-# Load environment variables from parent directory
-if [ -f "../.env" ]; then
+# Get the directory where this script is located
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Load environment variables from script directory
+if [ -f "$SCRIPT_DIR/.env" ]; then
   set -a
-  source ../.env
+  source "$SCRIPT_DIR/.env"
   set +a
 fi
 
