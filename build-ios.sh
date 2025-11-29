@@ -101,10 +101,8 @@ xcodebuild -workspace *.xcworkspace \
   archive 2>&1 | tail -50
 
 echo "📦 Exporting IPA..."
-if [ -f "build/DogvatarMobile.ipa" ]; then
-  echo "Using existing IPA"
-else
-  cat > exportOptions.plist << EOF
+rm -f build/*.ipa
+cat > exportOptions.plist << EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -120,11 +118,10 @@ else
 </dict>
 </plist>
 EOF
-  xcodebuild -exportArchive \
-    -archivePath build/App.xcarchive \
-    -exportPath build \
-    -exportOptionsPlist exportOptions.plist || echo "Export failed, will try to use existing IPA"
-fi
+xcodebuild -exportArchive \
+  -archivePath build/App.xcarchive \
+  -exportPath build \
+  -exportOptionsPlist exportOptions.plist
 
 echo "☁️ Uploading to TestFlight..."
 mkdir -p ~/.appstoreconnect/private_keys
