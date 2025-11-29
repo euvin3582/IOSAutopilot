@@ -18,8 +18,9 @@ Turn your Mac into a CI/CD server for iOS apps - no cloud build minutes needed!
 - macOS with Xcode installed
 - Node.js 18+
 - CocoaPods
-- Apple Developer Account
+- Apple Developer Account with Admin access
 - App Store Connect API Key
+- iOS Distribution Certificate (created on this Mac)
 - ngrok (for local webhook testing)
 
 ## Quick Start
@@ -47,24 +48,39 @@ Turn your Mac into a CI/CD server for iOS apps - no cloud build minutes needed!
    - `APP_STORE_CONNECT_ISSUER_ID` - From App Store Connect API
 
 4. **Add App Store Connect API Key**
-   - Download your `.p8` key file from App Store Connect
+   - Go to App Store Connect > Users and Access > Keys
+   - Create a new key with Admin access
+   - Download the `.p8` key file
    - Place it in this directory as `AuthKey_XXXXXXXXXX.p8`
-   - Update `build-ios.sh` with your key ID
+   - Note the Key ID and Issuer ID
 
-5. **Update configuration**
-   - Edit `webhook-server.js` - change repo name to your app repo
-   - Edit `build-ios.sh` - update scheme name and minimum build number
+5. **Create iOS Distribution Certificate**
+   - Open Keychain Access
+   - Keychain Access > Certificate Assistant > Request a Certificate from a Certificate Authority
+   - Save to disk (creates a .certSigningRequest file)
+   - Go to https://developer.apple.com/account/resources/certificates/add
+   - Select "Apple Distribution"
+   - Upload your CSR file
+   - Download the certificate and double-click to install
+   - Verify: `security find-identity -v -p codesigning` should show "iPhone Distribution"
 
-6. **Sign in to Xcode**
+6. **Update configuration**
+   Edit `.env` with your values:
+   - `TARGET_REPO` - Your GitHub repo (e.g., your-org/your-app)
+   - `REPO_URL` - Full GitHub URL
+   - `REPO_DIR` - Local directory name
+   - `SCHEME` - Xcode scheme name
+   - `APPLE_TEAM_ID` - Your Apple Developer Team ID
+   - `API_KEY_ID` - App Store Connect API Key ID
+   - `APP_STORE_CONNECT_ISSUER_ID` - Issuer ID from App Store Connect
+   - `MIN_BUILD_NUMBER` - Starting build number
+   - `APP_ENV_VARS` - Your app's environment variables (multiline format)
+
+7. **Install as system service**
    ```bash
-   open -a Xcode
+   bash setup-service.sh
    ```
-   Go to Settings > Accounts and sign in with your Apple ID
-
-7. **Start the webhook server**
-   ```bash
-   ./start.sh
-   ```
+   This installs a LaunchAgent that runs in your user session with keychain access.
 
 8. **Expose with ngrok**
    ```bash
@@ -100,21 +116,48 @@ Turn your Mac into a CI/CD server for iOS apps - no cloud build minutes needed!
 The script automatically patches ReactNativeDependencies.podspec to fix common issues.
 
 ### Build Number Conflicts
-Update the minimum build number in `build-ios.sh` if you get duplicate version errors.
+Update `MIN_BUILD_NUMBER` in `.env` if you get duplicate version errors.
 
-### Signing Issues
-Make sure you're signed in to Xcode with your Apple Developer account.
+### Signing Issues - "No signing certificate found"
+The iOS Distribution certificate must be created on the Mac where builds run:
+1. Check if certificate exists: `security find-identity -v -p codesigning`
+2. If missing "iPhone Distribution", create a new certificate (see step 5 above)
+3. The certificate MUST have a private key (created via CSR on this Mac)
+
+### Environment Variables Not Working
+Verify `APP_ENV_VARS` in `.env` is properly formatted:
+```bash
+APP_ENV_VARS="VAR1=value1
+VAR2=value2
+VAR3=value3"
+```
+
+### Service Not Running After Screen Lock
+The LaunchAgent is configured to run in your user session (Aqua). Check status:
+```bash
+launchctl list | grep iosautopilot
+curl http://localhost:3000/webhook -X POST -d '{"test":true}'
+```
 
 ## Production Deployment
 
 For production, replace ngrok with a permanent solution:
-- Deploy webhook server to a VPS
-- Use a domain with SSL
-- Set up PM2 to auto-start on boot:
-  ```bash
-  pm2 startup
-  pm2 save
-  ```
+- Deploy webhook server to a VPS with public IP
+- Use a domain with SSL certificate
+- Or use a service like Tailscale/Cloudflare Tunnel for secure access
+
+## Service Management
+
+```bash
+# Stop service
+launchctl unload ~/Library/LaunchAgents/com.iosautopilot.webhook.plist
+
+# Start service
+launchctl load ~/Library/LaunchAgents/com.iosautopilot.webhook.plist
+
+# View logs
+tail -f webhook.log webhook.error.log
+```
 
 ## License
 
