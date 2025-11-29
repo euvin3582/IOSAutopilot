@@ -127,7 +127,11 @@ EOF
 xcodebuild -exportArchive \
   -archivePath build/App.xcarchive \
   -exportPath build \
-  -exportOptionsPlist exportOptions.plist
+  -exportOptionsPlist exportOptions.plist \
+  -allowProvisioningUpdates \
+  -authenticationKeyPath ~/.appstoreconnect/private_keys/AuthKey_$API_KEY_ID.p8 \
+  -authenticationKeyID $API_KEY_ID \
+  -authenticationKeyIssuerID $ISSUER_ID
 
 echo "☁️ Uploading to TestFlight..."
 mkdir -p ~/.appstoreconnect/private_keys
