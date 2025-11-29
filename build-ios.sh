@@ -37,6 +37,9 @@ echo "📦 Installing dependencies..."
 rm -rf node_modules
 npm install
 
+echo "🔧 Fixing Voice library..."
+sed -i '' 's/AVAudioSessionCategoryOptionAllowBluetooth/AVAudioSessionCategoryOptionAllowBluetoothHFP/g' node_modules/@react-native-voice/voice/ios/Voice/Voice.m 2>/dev/null || true
+
 echo "📝 Verifying .env file..."
 cat .env
 
