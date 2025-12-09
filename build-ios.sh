@@ -66,7 +66,7 @@ sed -i '' "s/\"buildNumber\": \"[0-9]*\"/\"buildNumber\": \"$NEW_BUILD\"/" app.j
 echo "Build number: $NEW_BUILD"
 
 echo "🔨 Running expo prebuild..."
-EXPO_NO_DOTENV=1 npx expo prebuild --platform ios --clean
+CI=1 EXPO_NO_DOTENV=1 npx expo prebuild --platform ios --clean --skip-dependency-update react-native
 
 echo "📦 Installing pods..."
 cd ios
@@ -74,14 +74,14 @@ rm -rf Pods Podfile.lock
 pod install
 
 echo "🔨 Building and archiving iOS app..."
-xcodebuild -workspace *.xcworkspace \
+NODE_BINARY=$(which node) xcodebuild -workspace *.xcworkspace \
   -scheme $SCHEME \
   -configuration Release \
   -archivePath build/App.xcarchive \
   -allowProvisioningUpdates \
   -sdk iphoneos \
   DEVELOPMENT_TEAM=$TEAM_ID \
-  archive
+  archive 2>&1 | tee /tmp/xcodebuild.log | tail -100
 
 echo "📦 Exporting IPA..."
 rm -f build/*.ipa
