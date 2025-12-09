@@ -18,6 +18,7 @@ Turn your Mac into a CI/CD server for iOS apps - no cloud build minutes needed!
 - macOS with Xcode installed
 - Node.js 18+
 - CocoaPods
+- xcodeproj gem: `gem install xcodeproj --user-install`
 - Apple Developer Account with Admin access
 - App Store Connect API Key
 - iOS Distribution Certificate (created on this Mac)
