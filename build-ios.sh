@@ -66,7 +66,7 @@ sed -i '' "s/\"buildNumber\": \"[0-9]*\"/\"buildNumber\": \"$NEW_BUILD\"/" app.j
 echo "Build number: $NEW_BUILD"
 
 echo "🔨 Running expo prebuild..."
-CI=1 EXPO_NO_DOTENV=1 npx expo prebuild --platform ios --clean --skip-dependency-update react-native
+CI=1 EXPO_NO_DOTENV=1 npx expo prebuild --platform ios --clean --skip-dependency-update=react-native
 
 echo "📦 Installing pods..."
 cd ios
