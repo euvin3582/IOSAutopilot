@@ -12,25 +12,28 @@ const TARGET_REPO = process.env.TARGET_REPO || 'YOUR_ORG/YOUR_REPO';
 app.post('/webhook', async (req, res) => {
   console.log('📥 Headers:', req.headers);
   console.log('📥 Body:', JSON.stringify(req.body, null, 2));
-  
+
   const { repository, ref } = req.body;
-  
+
   if (repository?.full_name === TARGET_REPO && ref?.startsWith('refs/heads/')) {
-    console.log('🚀 Push detected, triggering build...');
-    res.status(200).send('Build triggered');
-    
-    try {
-      execSync('./build-ios.sh', { 
-        cwd: __dirname, 
-        stdio: 'inherit',
-        env: { ...process.env }
-      });
-    } catch (error) {
-      console.error('❌ Build failed:', error.message);
-    }
+    console.log('🚀 Push detected, triggering iOS & Android builds...');
+    res.status(200).send('Builds triggered');
+
+    setTimeout(() => {
+      // iOS build
+      try {
+        execSync('./build-ios.sh', {
+          cwd: __dirname,
+          stdio: 'inherit',
+          env: { ...process.env }
+        });
+      } catch (error) {
+        console.error('❌ iOS build failed:', error.message);
+      }
+    }, 100);
   } else {
     res.status(200).send('OK');
   }
 });
 
-app.listen(3000, () => console.log('Webhook server running on port 3000'));
+app.listen(3002, () => console.log('Webhook server running on port 3002'));

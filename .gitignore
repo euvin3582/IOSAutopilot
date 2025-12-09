@@ -2,5 +2,6 @@ node_modules/
 .env
 *.p8
 dogvatarmobile/
+build_*/
 *.log
 .DS_Store
