@@ -28,6 +28,8 @@ echo "📦 Setting up build directory..."
 BUILD_DIR="build"
 git clone "$REPO_URL" "$BUILD_DIR"
 cd "$BUILD_DIR"
+git clean -fdx
+git reset --hard HEAD
 
 echo "📝 Creating .env file..."
 echo "$APP_ENV_VARS" > .env
