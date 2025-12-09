@@ -33,6 +33,24 @@ echo "$APP_ENV_VARS" > .env
 echo "📦 Installing dependencies..."
 npm install
 
+echo "🔧 Cleaning any previous iOS build artifacts..."
+rm -rf ios
+
+echo "🔧 Patching podspecs..."
+# Patch ReactNativeDependencies
+PODSPEC="node_modules/react-native/third-party-podspecs/ReactNativeDependencies.podspec"
+if [ -f "$PODSPEC" ]; then
+  sed -i '' 's/package = JSON.parse(File.read(File.join(react_native_path, "package.json")))/package_path = File.join(react_native_path, "package.json"); package = File.exist?(package_path) ? JSON.parse(File.read(package_path)) : {"version" => "0.81.5"}/g' "$PODSPEC"
+  echo "Patched ReactNativeDependencies podspec"
+fi
+
+# Patch hermes-engine
+HERMES_PODSPEC="node_modules/react-native/sdks/hermes-engine/hermes-engine.podspec"
+if [ -f "$HERMES_PODSPEC" ]; then
+  sed -i '' 's/package = JSON.parse(File.read(File.join(react_native_path, "package.json")))/package_path = File.join(react_native_path, "package.json"); package = File.exist?(package_path) ? JSON.parse(File.read(package_path)) : {"version" => "0.81.5"}/g' "$HERMES_PODSPEC"
+  echo "Patched hermes-engine podspec"
+fi
+
 echo "🔢 Incrementing build number..."
 CURRENT_BUILD=$(grep "buildNumber" app.json | grep -o '[0-9]*' | head -1)
 NEW_BUILD=$((CURRENT_BUILD + 1))
@@ -42,16 +60,27 @@ fi
 sed -i '' "s/\"buildNumber\": \"[0-9]*\"/\"buildNumber\": \"$NEW_BUILD\"/" app.json
 echo "Build number: $NEW_BUILD"
 
-echo "🔨 Building iOS app with Expo..."
-npx expo run:ios --configuration Release --device
+echo "🔨 Running expo prebuild..."
+EXPO_NO_DOTENV=1 npx expo prebuild --platform ios --clean
 
-echo "📦 Finding and exporting archive..."
-ARCHIVE_PATH=$(find ~/Library/Developer/Xcode/Archives -name "*.xcarchive" -type d -print0 | xargs -0 ls -td | head -1)
-echo "Found archive: $ARCHIVE_PATH"
+echo "📦 Installing pods..."
+cd ios
+pod install
 
-cd "$(dirname "$ARCHIVE_PATH")"
-ARCHIVE_NAME=$(basename "$ARCHIVE_PATH")
+echo "🔨 Building and archiving iOS app..."
+xcodebuild -workspace *.xcworkspace \
+  -scheme $SCHEME \
+  -configuration Release \
+  -archivePath build/App.xcarchive \
+  -allowProvisioningUpdates \
+  -sdk iphoneos \
+  DEVELOPMENT_TEAM=$TEAM_ID \
+  archive
 
+echo "📦 Exporting IPA..."
+rm -f build/*.ipa
+
+cd build
 cat > exportOptions.plist << EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -70,7 +99,7 @@ cat > exportOptions.plist << EOF
 EOF
 
 xcodebuild -exportArchive \
-  -archivePath "$ARCHIVE_NAME" \
+  -archivePath App.xcarchive \
   -exportPath . \
   -exportOptionsPlist exportOptions.plist \
   -allowProvisioningUpdates \
