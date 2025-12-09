@@ -18,19 +18,22 @@ API_KEY_ID="${API_KEY_ID}"
 ISSUER_ID="${APP_STORE_CONNECT_ISSUER_ID}"
 MIN_BUILD_NUMBER="${MIN_BUILD_NUMBER:-1}"
 
+echo "🧹 Cleaning all caches..."
+rm -rf build
+rm -rf ~/Library/Developer/Xcode/DerivedData/*
+rm -rf ~/.expo
+rm -rf /tmp/metro-*
+
 echo "📦 Setting up build directory..."
 BUILD_DIR="build"
-if [ ! -d "$BUILD_DIR" ]; then
-  git clone "$REPO_URL" "$BUILD_DIR"
-fi
+git clone "$REPO_URL" "$BUILD_DIR"
 cd "$BUILD_DIR"
-git fetch origin
-git reset --hard origin/$(git rev-parse --abbrev-ref HEAD)
 
 echo "📝 Creating .env file..."
 echo "$APP_ENV_VARS" > .env
 
 echo "📦 Installing dependencies..."
+rm -rf node_modules package-lock.json
 npm install
 
 echo "🔧 Cleaning any previous iOS build artifacts..."
@@ -65,6 +68,7 @@ EXPO_NO_DOTENV=1 npx expo prebuild --platform ios --clean
 
 echo "📦 Installing pods..."
 cd ios
+rm -rf Pods Podfile.lock
 pod install
 
 echo "🔨 Building and archiving iOS app..."
