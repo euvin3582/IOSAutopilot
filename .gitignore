@@ -1,7 +1,7 @@
 node_modules/
 .env
 *.p8
-dogvatarmobile/
+build/
 build_*/
 *.log
 .DS_Store

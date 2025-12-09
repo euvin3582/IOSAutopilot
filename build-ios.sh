@@ -19,11 +19,14 @@ API_KEY_ID="${API_KEY_ID}"
 ISSUER_ID="${APP_STORE_CONNECT_ISSUER_ID}"
 MIN_BUILD_NUMBER="${MIN_BUILD_NUMBER:-1}"
 
-echo "📦 Cloning repository to build directory..."
-BUILD_DIR="build_$(date +%s)"
-rm -rf "$BUILD_DIR"
-git clone "$REPO_URL" "$BUILD_DIR"
+echo "📦 Setting up build directory..."
+BUILD_DIR="build"
+if [ ! -d "$BUILD_DIR" ]; then
+  git clone "$REPO_URL" "$BUILD_DIR"
+fi
 cd "$BUILD_DIR"
+git fetch origin
+git reset --hard origin/$(git rev-parse --abbrev-ref HEAD)
 
 echo "📝 Creating .env file..."
 echo "APP_ENV_VARS length: ${#APP_ENV_VARS}"
@@ -36,7 +39,7 @@ echo "🔍 Checking if react-native/index.js exists..."
 ls -la node_modules/react-native/index.js || echo "❌ File missing after npm install!"
 
 echo "🔨 Prebuilding iOS..."
-SKIP_BUNDLING=1 EXPO_NO_GIT_STATUS=1 npx expo prebuild --platform ios --skip-dependency-update cocoapods
+EXPO_NO_GIT_STATUS=1 npx expo prebuild --platform ios --no-install
 
 echo "🔧 Fixing Voice library..."
 sed -i '' 's/AVAudioSessionCategoryOptionAllowBluetooth/AVAudioSessionCategoryOptionAllowBluetoothHFP/g' node_modules/@react-native-voice/voice/ios/Voice/Voice.m 2>/dev/null || true
