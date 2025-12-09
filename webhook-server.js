@@ -28,7 +28,7 @@ app.post('/webhook', async (req, res) => {
           env: { ...process.env }
         });
       } catch (error) {
-        console.error('❌ iOS build failed:', error.message);
+        console.error('\x1b[31m❌ iOS build failed:\x1b[0m', error.message);
       }
     }, 100);
   } else {
