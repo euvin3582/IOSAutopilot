@@ -68,13 +68,9 @@ echo "Build number: $NEW_BUILD"
 echo "🔨 Running expo prebuild..."
 CI=1 EXPO_NO_DOTENV=1 npx expo prebuild --platform ios --clean --skip-dependency-update=react-native
 
-echo "📦 Installing pods..."
-cd ios
-rm -rf Pods Podfile.lock
-pod install
-
 echo "🔨 Building and archiving iOS app..."
-NODE_BINARY=$(which node) xcodebuild -workspace *.xcworkspace \
+cd ios
+SENTRY_DISABLE_AUTO_UPLOAD=true NODE_BINARY=$(which node) xcodebuild -workspace *.xcworkspace \
   -scheme $SCHEME \
   -configuration Release \
   -archivePath build/App.xcarchive \
