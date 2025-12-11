@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+START_TIME=$SECONDS
+
 # Get the directory where this script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -35,6 +37,9 @@ git reset --hard HEAD
 echo "📝 Creating .env file..."
 echo "$APP_ENV_VARS" > .env
 
+git config user.email "build@iosautopilot.local"
+git config user.name "iOS Autopilot"
+
 echo "📦 Installing dependencies..."
 rm -rf node_modules package-lock.json
 npm install
@@ -54,14 +59,13 @@ if [ -f "$HERMES_PODSPEC" ]; then
   echo "Patched hermes-engine podspec"
 fi
 
-echo "🔢 Incrementing build number..."
-CURRENT_BUILD=$(grep "buildNumber" app.json | grep -o '[0-9]*' | head -1)
-NEW_BUILD=$((CURRENT_BUILD + 1))
-if [ $NEW_BUILD -le $MIN_BUILD_NUMBER ]; then
-  NEW_BUILD=$((MIN_BUILD_NUMBER + 1))
-fi
+echo "🔢 Setting build number..."
+NEW_BUILD=$((MIN_BUILD_NUMBER + 1))
 sed -i '' "s/\"buildNumber\": \"[0-9]*\"/\"buildNumber\": \"$NEW_BUILD\"/" app.json
 echo "Build number: $NEW_BUILD"
+
+git add -A
+git commit -m "Build $NEW_BUILD" || true
 
 echo "🔨 Running expo prebuild..."
 rm -rf ios
@@ -70,19 +74,27 @@ EXPO_NO_DOTENV=1 npx expo prebuild --platform ios --clean
 echo "🔨 Building and archiving iOS app..."
 cd ios
 WORKSPACE=$(find . -name "*.xcworkspace" -maxdepth 1 | head -1 | sed 's|./||')
+mkdir -p build
+
+# Start timer in background
+(while true; do echo "⏱️  Build running for $SECONDS seconds..."; sleep 30; done) &
+TIMER_PID=$!
+
 SENTRY_DISABLE_AUTO_UPLOAD=true NODE_BINARY=$(which node) xcodebuild -workspace "$WORKSPACE" \
   -scheme $SCHEME \
   -configuration Release \
-  -archivePath build/App.xcarchive \
+  -archivePath "$PWD/build/App.xcarchive" \
   -allowProvisioningUpdates \
   -sdk iphoneos \
   DEVELOPMENT_TEAM=$TEAM_ID \
   archive 2>&1 | tee /tmp/xcodebuild.log | tail -100
 
-echo "📦 Exporting IPA..."
-rm -f build/*.ipa
+kill $TIMER_PID 2>/dev/null
+echo "✅ Archive completed in $SECONDS seconds"
 
+echo "📦 Exporting IPA..."
 cd build
+rm -f *.ipa
 cat > exportOptions.plist << EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -118,11 +130,14 @@ xcrun altool --upload-app \
   --apiKey $API_KEY_ID \
   --apiIssuer $ISSUER_ID
 
-echo "💾 Updating MIN_BUILD_NUMBER in .env..."
+echo "💾 Updating build number in .env..."
 sed -i '' "s/MIN_BUILD_NUMBER=.*/MIN_BUILD_NUMBER=$NEW_BUILD/" "$SCRIPT_DIR/.env"
 
 echo "🧹 Cleaning up..."
 cd "$SCRIPT_DIR"
 rm -rf "$BUILD_DIR"
 
-echo "✅ Build and upload complete!"
+TOTAL_TIME=$((SECONDS - START_TIME))
+MINUTES=$((TOTAL_TIME / 60))
+SECS=$((TOTAL_TIME % 60))
+echo "✅ Build and upload complete! Total time: ${MINUTES}m ${SECS}s"
