@@ -140,4 +140,9 @@ rm -rf "$BUILD_DIR"
 TOTAL_TIME=$((SECONDS - START_TIME))
 MINUTES=$((TOTAL_TIME / 60))
 SECS=$((TOTAL_TIME % 60))
-echo "✅ Build and upload complete! Total time: ${MINUTES}m ${SECS}s"
+echo ""
+echo "========================================"
+echo "✅ Build and upload complete!"
+echo "📦 Build #$NEW_BUILD uploaded to TestFlight"
+echo "⏱️  Total time: ${MINUTES}m ${SECS}s"
+echo "========================================"
