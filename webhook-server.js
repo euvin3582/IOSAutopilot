@@ -15,8 +15,9 @@ app.post('/webhook', async (req, res) => {
 
   const { repository, ref } = req.body;
 
-  if (repository?.full_name === TARGET_REPO && ref?.startsWith('refs/heads/')) {
-    console.log('🚀 Push detected, triggering iOS & Android builds...');
+  if (repository?.full_name === TARGET_REPO && ref === 'refs/heads/main') {
+    const branch = 'main';
+    console.log(`🚀 Push to main detected, triggering iOS & Android builds...`);
     res.status(200).send('Builds triggered');
 
     setTimeout(() => {
@@ -25,7 +26,7 @@ app.post('/webhook', async (req, res) => {
         execSync('./build-ios.sh', {
           cwd: __dirname,
           stdio: 'inherit',
-          env: { ...process.env }
+          env: { ...process.env, GIT_BRANCH: branch }
         });
       } catch (error) {
         console.error('\x1b[31m❌ iOS build failed:\x1b[0m', error.message);

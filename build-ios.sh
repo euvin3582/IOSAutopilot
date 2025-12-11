@@ -24,9 +24,10 @@ rm -rf ~/Library/Developer/Xcode/DerivedData/*
 rm -rf ~/.expo
 rm -rf /tmp/metro-*
 
-echo "📦 Setting up build directory..."
+GIT_BRANCH="${GIT_BRANCH:-main}"
+echo "📦 Setting up build directory (branch: $GIT_BRANCH)..."
 BUILD_DIR="build"
-git clone "$REPO_URL" "$BUILD_DIR"
+git clone --branch "$GIT_BRANCH" "$REPO_URL" "$BUILD_DIR"
 cd "$BUILD_DIR"
 git clean -fdx
 git reset --hard HEAD
@@ -37,9 +38,6 @@ echo "$APP_ENV_VARS" > .env
 echo "📦 Installing dependencies..."
 rm -rf node_modules package-lock.json
 npm install
-
-echo "🔧 Cleaning any previous iOS build artifacts..."
-rm -rf ios
 
 echo "🔧 Patching podspecs..."
 # Patch ReactNativeDependencies
@@ -66,11 +64,13 @@ sed -i '' "s/\"buildNumber\": \"[0-9]*\"/\"buildNumber\": \"$NEW_BUILD\"/" app.j
 echo "Build number: $NEW_BUILD"
 
 echo "🔨 Running expo prebuild..."
-CI=1 EXPO_NO_DOTENV=1 npx expo prebuild --platform ios --clean --skip-dependency-update=react-native
+rm -rf ios
+EXPO_NO_DOTENV=1 npx expo prebuild --platform ios --clean
 
 echo "🔨 Building and archiving iOS app..."
 cd ios
-SENTRY_DISABLE_AUTO_UPLOAD=true NODE_BINARY=$(which node) xcodebuild -workspace *.xcworkspace \
+WORKSPACE=$(find . -name "*.xcworkspace" -maxdepth 1 | head -1 | sed 's|./||')
+SENTRY_DISABLE_AUTO_UPLOAD=true NODE_BINARY=$(which node) xcodebuild -workspace "$WORKSPACE" \
   -scheme $SCHEME \
   -configuration Release \
   -archivePath build/App.xcarchive \
