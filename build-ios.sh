@@ -77,8 +77,10 @@ WORKSPACE=$(find . -name "*.xcworkspace" -maxdepth 1 | head -1 | sed 's|./||')
 mkdir -p build
 
 # Start timer in background
-(while true; do echo "⏱️  Build running for $SECONDS seconds..."; sleep 30; done) &
+BUILD_START=$SECONDS
+(while true; do echo "⏱️  Build running for $((SECONDS - BUILD_START)) seconds..."; sleep 30; done) &
 TIMER_PID=$!
+trap "kill $TIMER_PID 2>/dev/null" EXIT
 
 SENTRY_DISABLE_AUTO_UPLOAD=true NODE_BINARY=$(which node) xcodebuild -workspace "$WORKSPACE" \
   -scheme $SCHEME \
@@ -90,7 +92,8 @@ SENTRY_DISABLE_AUTO_UPLOAD=true NODE_BINARY=$(which node) xcodebuild -workspace 
   archive 2>&1 | tee /tmp/xcodebuild.log | tail -100
 
 kill $TIMER_PID 2>/dev/null
-echo "✅ Archive completed in $SECONDS seconds"
+BUILD_TIME=$((SECONDS - BUILD_START))
+echo "✅ Archive completed in $BUILD_TIME seconds"
 
 echo "📦 Exporting IPA..."
 cd build
