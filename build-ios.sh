@@ -15,6 +15,7 @@ fi
 
 REPO_URL="${REPO_URL}"
 SCHEME="${SCHEME}"
+BUNDLE_IDENTIFIER="${BUNDLE_IDENTIFIER}"
 TEAM_ID="${APPLE_TEAM_ID}"
 API_KEY_ID="${API_KEY_ID}"
 ISSUER_ID="${APP_STORE_CONNECT_ISSUER_ID}"
@@ -59,9 +60,13 @@ if [ -f "$HERMES_PODSPEC" ]; then
   echo "Patched hermes-engine podspec"
 fi
 
-echo "🔢 Setting build number..."
+echo "🔢 Setting build number and bundle identifier..."
 NEW_BUILD=$((MIN_BUILD_NUMBER + 1))
 sed -i '' "s/\"buildNumber\": \"[0-9]*\"/\"buildNumber\": \"$NEW_BUILD\"/" app.json
+if [ -n "$BUNDLE_IDENTIFIER" ]; then
+  sed -i '' "s/\"bundleIdentifier\": \"[^\"]*\"/\"bundleIdentifier\": \"$BUNDLE_IDENTIFIER\"/" app.json
+  echo "Bundle identifier: $BUNDLE_IDENTIFIER"
+fi
 echo "Build number: $NEW_BUILD"
 
 git add -A
@@ -104,7 +109,7 @@ cat > exportOptions.plist << EOF
 <plist version="1.0">
 <dict>
     <key>method</key>
-    <string>app-store</string>
+    <string>app-store-connect</string>
     <key>teamID</key>
     <string>$TEAM_ID</string>
     <key>uploadSymbols</key>
