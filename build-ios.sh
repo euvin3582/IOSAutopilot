@@ -112,6 +112,13 @@ cat > exportOptions.plist << EOF
     <string>app-store-connect</string>
     <key>teamID</key>
     <string>$TEAM_ID</string>
+    <key>signingStyle</key>
+    <string>manual</string>
+    <key>provisioningProfiles</key>
+    <dict>
+        <key>$BUNDLE_IDENTIFIER</key>
+        <string>DogvatarMobileDev</string>
+    </dict>
     <key>uploadSymbols</key>
     <true/>
     <key>uploadBitcode</key>
@@ -123,11 +130,7 @@ EOF
 xcodebuild -exportArchive \
   -archivePath App.xcarchive \
   -exportPath . \
-  -exportOptionsPlist exportOptions.plist \
-  -allowProvisioningUpdates \
-  -authenticationKeyPath ~/.appstoreconnect/private_keys/AuthKey_$API_KEY_ID.p8 \
-  -authenticationKeyID $API_KEY_ID \
-  -authenticationKeyIssuerID $ISSUER_ID
+  -exportOptionsPlist exportOptions.plist
 
 echo "☁️ Uploading to TestFlight..."
 mkdir -p ~/.appstoreconnect/private_keys
