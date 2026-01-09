@@ -28,8 +28,11 @@ app.post('/webhook', async (req, res) => {
           stdio: 'inherit',
           env: { ...process.env, GIT_BRANCH: branch }
         });
+        console.log('\x1b[32m✅ iOS build completed successfully\x1b[0m');
       } catch (error) {
-        console.error('\x1b[31m❌ iOS build failed:\x1b[0m', error.message);
+        if (error.status !== 0) {
+          console.error('\x1b[31m❌ iOS build failed:\x1b[0m', error.message);
+        }
       }
     }, 100);
   } else {
