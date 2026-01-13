@@ -16,6 +16,7 @@ fi
 REPO_URL="${REPO_URL}"
 SCHEME="${SCHEME}"
 BUNDLE_IDENTIFIER="${BUNDLE_IDENTIFIER}"
+APP_ICON="${APP_ICON}"
 TEAM_ID="${APPLE_TEAM_ID}"
 API_KEY_ID="${API_KEY_ID}"
 ISSUER_ID="${APP_STORE_CONNECT_ISSUER_ID}"
@@ -67,6 +68,17 @@ if [ -n "$BUNDLE_IDENTIFIER" ]; then
   sed -i '' "s/\"bundleIdentifier\": \"[^\"]*\"/\"bundleIdentifier\": \"$BUNDLE_IDENTIFIER\"/" app.json
   echo "Bundle identifier: $BUNDLE_IDENTIFIER"
 fi
+
+# Set app icon if specified
+if [ -n "$APP_ICON" ]; then
+  if [ -f "assets/$APP_ICON" ]; then
+    sed -i '' "s/\"icon\": \"[^\"]*\"/\"icon\": \".\/assets\/$APP_ICON\"/" app.json
+    echo "Using app icon: $APP_ICON"
+  else
+    echo "Warning: Icon file assets/$APP_ICON not found, using default"
+  fi
+fi
+
 echo "Build number: $NEW_BUILD"
 
 git add -A
