@@ -157,3 +157,5 @@ echo "✅ Build and upload complete!"
 echo "📦 Build #$NEW_BUILD uploaded to TestFlight"
 echo "⏱️  Total time: ${MINUTES}m ${SECS}s"
 echo "========================================"
+
+exit 0

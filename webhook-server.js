@@ -30,9 +30,8 @@ app.post('/webhook', async (req, res) => {
         });
         console.log('\x1b[32m✅ iOS build completed successfully\x1b[0m');
       } catch (error) {
-        if (error.status !== 0) {
-          console.error('\x1b[31m❌ iOS build failed:\x1b[0m', error.message);
-        }
+        // Only log error if it's an actual failure (not just non-zero exit)
+        console.error('\x1b[31m❌ iOS build failed:\x1b[0m', error.message);
       }
     }, 100);
   } else {
