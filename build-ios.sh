@@ -99,24 +99,39 @@ BUILD_START=$SECONDS
 TIMER_PID=$!
 trap "kill $TIMER_PID 2>/dev/null" EXIT
 
-# Run xcodebuild with 30 minute timeout
-timeout 1800 xcodebuild -workspace "$WORKSPACE" \
+# Start xcodebuild in background with timeout monitoring
+SENTRY_DISABLE_AUTO_UPLOAD=true NODE_BINARY=$(which node) xcodebuild -workspace "$WORKSPACE" \
   -scheme $SCHEME \
   -configuration Release \
   -archivePath "$PWD/build/App.xcarchive" \
   -allowProvisioningUpdates \
   -sdk iphoneos \
   DEVELOPMENT_TEAM=$TEAM_ID \
-  archive 2>&1 | tee /tmp/xcodebuild.log | tail -100
+  archive 2>&1 | tee /tmp/xcodebuild.log | tail -100 &
+XCODEBUILD_PID=$!
 
+# Monitor for timeout (30 minutes = 1800 seconds)
+TIMEOUT=1800
+while kill -0 $XCODEBUILD_PID 2>/dev/null; do
+  if [ $((SECONDS - BUILD_START)) -gt $TIMEOUT ]; then
+    echo "❌ Build timed out after 30 minutes"
+    kill $XCODEBUILD_PID 2>/dev/null
+    kill $TIMER_PID 2>/dev/null
+    exit 1
+  fi
+  sleep 10
+done
+
+wait $XCODEBUILD_PID
 BUILD_EXIT_CODE=$?
-if [ $BUILD_EXIT_CODE -eq 124 ]; then
-  echo "❌ Build timed out after 30 minutes"
-  kill $TIMER_PID 2>/dev/null
-  exit 1
-fi
 
 kill $TIMER_PID 2>/dev/null
+
+if [ $BUILD_EXIT_CODE -ne 0 ]; then
+  echo "❌ Build failed with exit code $BUILD_EXIT_CODE"
+  exit $BUILD_EXIT_CODE
+fi
+
 BUILD_TIME=$((SECONDS - BUILD_START))
 echo "✅ Archive completed in $BUILD_TIME seconds"
 
