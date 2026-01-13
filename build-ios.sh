@@ -99,7 +99,8 @@ BUILD_START=$SECONDS
 TIMER_PID=$!
 trap "kill $TIMER_PID 2>/dev/null" EXIT
 
-SENTRY_DISABLE_AUTO_UPLOAD=true NODE_BINARY=$(which node) xcodebuild -workspace "$WORKSPACE" \
+# Run xcodebuild with 30 minute timeout
+timeout 1800 xcodebuild -workspace "$WORKSPACE" \
   -scheme $SCHEME \
   -configuration Release \
   -archivePath "$PWD/build/App.xcarchive" \
@@ -107,6 +108,13 @@ SENTRY_DISABLE_AUTO_UPLOAD=true NODE_BINARY=$(which node) xcodebuild -workspace 
   -sdk iphoneos \
   DEVELOPMENT_TEAM=$TEAM_ID \
   archive 2>&1 | tee /tmp/xcodebuild.log | tail -100
+
+BUILD_EXIT_CODE=$?
+if [ $BUILD_EXIT_CODE -eq 124 ]; then
+  echo "❌ Build timed out after 30 minutes"
+  kill $TIMER_PID 2>/dev/null
+  exit 1
+fi
 
 kill $TIMER_PID 2>/dev/null
 BUILD_TIME=$((SECONDS - BUILD_START))
